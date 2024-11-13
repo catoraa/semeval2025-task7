@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 # 文件导入
 fact_checks = pd.read_csv("../sample_data/trial_fact_checks.csv").fillna('').set_index('fact_check_id')
 posts = pd.read_csv("../sample_data/trial_posts.csv").fillna('').set_index('post_id')
-dfact_check_post_mapping = pd.read_csv("../sample_data/trial_data_mapping.csv.csv")
+pairs = pd.read_csv("../sample_data/trial_data_mapping.csv.csv")
 
 # 文件预处理 将\n转换为\nn避免歧义
 parse_col = lambda s: ast.literal_eval(s.replace('\n', '\\n')) if s else s
@@ -33,15 +33,20 @@ if __name__ == '__main__':
     logging.root.setLevel(level=logging.INFO)
     logger.info(r"running %s" % ''.join(sys.argv))
 
-    train, val = train_test_split(train, test_size=.2)
+    # 创建ID到文本的映射
+    post_dict = posts.set_index('post_id').apply(lambda row: row['ocr'] + row['title'], axis=1).to_dict()
+    fact_check_dict = fact_checks.set_index('fact_check_id').apply(lambda row: row['claim'] + row['title'], axis=1).to_dict()
+
+    #根据pairs mapping获取文本对
+    train, val = train_test_split(pairs, test_size=.2)
 
     train_dict = {'label': train["sentiment"], 'text': train['review']}
     val_dict = {'label': val["sentiment"], 'text': val['review']}
-    test_dict = {"text": test['review']}
+    #test_dict = {"text": test['review']}
 
     train_dataset = datasets.Dataset.from_dict(train_dict)
     val_dataset = datasets.Dataset.from_dict(val_dict)
-    test_dataset = datasets.Dataset.from_dict(test_dict)
+    #test_dataset = datasets.Dataset.from_dict(test_dict)
 
     tokenizer = RobertaTokenizerFast.from_pretrained('xlm-roberta-base')
 
@@ -52,7 +57,7 @@ if __name__ == '__main__':
 
     tokenized_train = train_dataset.map(preprocess_function, batched=True)
     tokenized_val = val_dataset.map(preprocess_function, batched=True)
-    tokenized_test = test_dataset.map(preprocess_function, batched=True)
+    #tokenized_test = test_dataset.map(preprocess_function, batched=True)
 
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
@@ -93,10 +98,10 @@ if __name__ == '__main__':
 
     trainer.train()
 
-    prediction_outputs = trainer.predict(tokenized_test)
-    test_pred = np.argmax(prediction_outputs[0], axis=-1).flatten()
-    print(test_pred)
+    #prediction_outputs = trainer.predict(tokenized_test)
+    #test_pred = np.argmax(prediction_outputs[0], axis=-1).flatten()
+    #print(test_pred)
 
-    result_output = pd.DataFrame(data={"id": test["id"], "sentiment": test_pred})
-    result_output.to_csv("../result/roberta_trainer.csv", index=False, quoting=3)
-    logging.info('result saved!')
+    #result_output = pd.DataFrame(data={"id": test["id"], "sentiment": test_pred})
+    #result_output.to_csv("../result/roberta_trainer.csv", index=False, quoting=3)
+    #logging.info('result saved!')
