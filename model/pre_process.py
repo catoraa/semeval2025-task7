@@ -1,13 +1,25 @@
+import ast
 import pandas as pd
 
+parse_col = lambda s: ast.literal_eval(s.replace('\n', '\\n')) if s else s
 
-post = pd.read_csv('../sample_data/trial_posts.csv')
-fact_check = pd.read_csv('../sample_data/trial_fact_checks.csv')
+fact_checks = pd.read_csv('../test_data/fact_checks.csv')
+posts = pd.read_csv('../test_data/posts.csv')
 
-post['post_text'] = post['verdicts'].apply(lambda x: x[0] if x else '') + ' ' + post['ocr'].apply(lambda x: x[1]) + ' ' + post['text'].apply(lambda x: x[1] if x else '')
-post = post[['post_id','post_text']]
-post.to_csv('../sample_data/trial_posts_pre.csv', index=False)
+#fact check预处理
+fact_checks = fact_checks.fillna('').set_index('fact_check_id')
+for col in ['claim', 'instances', 'title']:
+    fact_checks[col] = fact_checks[col].apply(parse_col)
+fact_checks['fact_check_text'] = fact_checks['claim'].apply(lambda x: str(x[1]) if x else '') + ' ' + fact_checks[
+    'title'].apply(lambda x: str(x[1]) if x else '')
+fact_checks = fact_checks['fact_check_text']
+fact_checks.to_csv('../preprocess_test/fact_checks_pre.csv', index=True)
 
-fact_check['fact_check_text'] = fact_check['claim'].apply(lambda x: x[1]) + ' ' + post['text'].apply(lambda x: x[1] if x else '')
-fact_check = fact_check[['fact_check_id','fact_check_text']]
-fact_check.to_csv('../sample_data/trial_fact_checks_pre.csv', index=False)
+# post预处理
+posts = posts.fillna('').set_index('post_id')
+for col in ['instances', 'ocr', 'verdicts', 'text']:
+    posts[col] = posts[col].apply(parse_col)
+posts['post_text'] = posts['verdicts'].apply(lambda x: str(x[0]) if x else '') + ' ' + posts['ocr'].apply(
+    lambda x: str(x[0][1]) if x else '') + ' ' + posts['text'].apply(lambda x: str(x[1]) if x else '')
+posts = posts['post_text']
+posts.to_csv('../preprocess_test/posts_pre.csv', index=True)
