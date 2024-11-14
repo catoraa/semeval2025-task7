@@ -8,7 +8,8 @@ import pandas as pd
 import torch
 from datasets import Dataset
 from torch.utils.data import DataLoader
-from transformers import RobertaTokenizerFast, RobertaForSequenceClassification, DataCollatorWithPadding
+from transformers import RobertaTokenizerFast, DataCollatorWithPadding
+from sentence_transformers import SentenceTransformer
 from transformers import Trainer, TrainingArguments
 
 class FactCheckDataset(Dataset):
@@ -91,7 +92,7 @@ if __name__ == '__main__':
     # 构建DataCollator
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer, pad_to_multiple_of=8)
 
-    model = RobertaForSequenceClassification.from_pretrained('xlm-roberta-base', num_labels=2)
+    model = SentenceTransformer.from_pretrained('roberta-base', num_labels=2)
 
     training_args = TrainingArguments(
         output_dir='../result',  # output directory
