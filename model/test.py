@@ -15,5 +15,5 @@ for language, language_tasks in tasks.items():
         for fact_check_id in fact_checks_ids:
             a = max(a, predictions.index.get_loc(post_dev_id))
             b = max(b, fact_check_id)
-
+print(a)
 print(a, b)
